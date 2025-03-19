@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plagiarism Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Plagiarism Checker</h1>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" id="file-input" name="file" accept=".txt,.pdf" required>
+            <button type="submit">Check Plagiarism</button>
+        </form>
+        
+        <!-- Result Section -->
+        <div id="result" style="display: none;">
+            <h3>Result:</h3>
+            <p id="similarity"></p>
+            <h4>Comparison Details:</h4>
+            <pre id="comparison-text"></pre>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
