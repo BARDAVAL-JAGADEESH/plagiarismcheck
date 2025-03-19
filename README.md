@@ -20,14 +20,21 @@ Before you begin, ensure you have the following installed:
 - scikit-learn (for text vectorization and cosine similarity)
 - PyPDF2 (for extracting text from PDF files)
 
+###1. Clone the Repository
+
+
+```bash
+Copy
+git clone https://github.com/BARDAVAL-JAGADEESH/plagiarismcheck.git
+cd plagiarismcheck
+
 ### Install Dependencies
 
-You can install the required Python libraries using pip. Create a virtual environment (optional) and then run:
+You can install the required Python libraries using below command 
 
 ```bash
 pip install -r requirements.txt
  pip install flask scikit-learn nltk PyPDF2
-
 
 
 
