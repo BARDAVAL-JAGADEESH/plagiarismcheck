@@ -7,39 +7,39 @@ from sklearn.metrics.pairwise import cosine_similarity
 import nltk
 import PyPDF2  # For handling PDF files
 
-# Initialize NLTK
+# Initializing the NLTK
 nltk.download('punkt')
 
 app = Flask(__name__)
 DATABASE = 'plagiarism.db'
 
-# Initialize SQLite database
-def init_db():
-    with sqlite3.connect(DATABASE) as conn:
-        c = conn.cursor()
+# This function is about Initializing database 
+def initializing_database():
+    with sqlite3.connect(DATABASE) as connection:
+        c = connection.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS documents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            file_name TEXT,
+            filename TEXT,
             content TEXT,
-            upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            uploaddate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )''')
-        c.execute('''CREATE TABLE IF NOT EXISTS plagiarism_results (
+        c.execute('''CREATE TABLE IF NOT EXISTS plagiarismresults (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            document_id INTEGER,
-            similarity_percentage FLOAT,
-            comparison_text TEXT,
+            documentid INTEGER,
+            similaritypercentage FLOAT,
+            comparisontext TEXT,
             FOREIGN KEY(document_id) REFERENCES documents(id)
         )''')
-        conn.commit()
+        connection.commit()
 
-# Function to store document content in the database
-def store_document(file_name, content):
-    with sqlite3.connect(DATABASE) as conn:
-        c = conn.cursor()
-        c.execute('INSERT INTO documents (file_name, content) VALUES (?, ?)', (file_name, content))
-        conn.commit()
+# Thi function to store all the document content in to the database
+def store_document(filename, content):
+    with sqlite3.connect(DATABASE) as connection:
+        c = connection.cursor()
+        c.execute('INSERT INTO documents (file_name, content) VALUES (?, ?)', (filename, content))
+        connection.commit()
 
-# Function to extract text from PDF
+# This function will help extract text from PDF
 def extract_text_from_pdf(file):
     pdf_reader = PyPDF2.PdfReader(file)
     text = ""
@@ -47,49 +47,49 @@ def extract_text_from_pdf(file):
         text += page.extract_text()
     return text
 
-# Function to check plagiarism
+# This function will  to check plagiarism 
 def check_plagiarism(new_doc_text):
-    with sqlite3.connect(DATABASE) as conn:
-        c = conn.cursor()
+    with sqlite3.connect(DATABASE) as connection:
+        c = connection.cursor()
         c.execute('SELECT * FROM documents')
         documents = c.fetchall()
 
-    doc_contents = [doc[2] for doc in documents]  # List of existing documents' content
-    doc_contents.append(new_doc_text)  # Add the new document to the list
+    doc_contents = [doc[2] for doc in documents]  
+    doc_contents.append(new_doc_text)  
 
-    # Use TfidfVectorizer to calculate cosine similarity
+    # this will Use TfidfVectorizer to calculate  similarity in content 
     vectorizer = TfidfVectorizer(stop_words='english')
     tfidf_matrix = vectorizer.fit_transform(doc_contents)
 
-    # Compute cosine similarities
+    # this will count similarity
     cosine_sim = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
 
-    max_similarity = max(cosine_sim[0])  # Get max similarity score
-    similarity_percentage = max_similarity * 100  # Convert to percentage
+    max_similarity = max(cosine_sim[0])  
+    similarity_percentage = max_similarity * 100  # this will Convert into percentage
 
-    # Store plagiarism result
+    # this will Store plagiarism result
     comparison_text = json.dumps([doc_contents[i] for i in range(len(cosine_sim[0])) if cosine_sim[0][i] > 0.1])  # Only consider relevant matches
-    with sqlite3.connect(DATABASE) as conn:
-        c = conn.cursor()
+    with sqlite3.connect(DATABASE) as connection:
+        c = connection.cursor()
         c.execute('SELECT id FROM documents WHERE content = ?', (new_doc_text,))
-        document_id = c.lastrowid  # Get the last inserted document's ID
+        document_id = c.lastrowid  
         c.execute('INSERT INTO plagiarism_results (document_id, similarity_percentage, comparison_text) VALUES (?, ?, ?)', 
                   (document_id, similarity_percentage, comparison_text))
-        conn.commit()
+        connection.commit()
 
     return similarity_percentage, comparison_text
 
-# Route for the homepage
+# This function is home page 
 @app.route('/')
 def index():
     return render_template('index.htm')
 
-# Route to handle file upload
+#this will function will help to upload 
 @app.route('/upload', methods=['POST'])
 def upload_file():
     file = request.files['file']
     if file:
-        # Check if the file is a PDF
+        # this will Check if the file is a PDF or 
         if file.filename.endswith('.pdf'):
             file_content = extract_text_from_pdf(file)
         else:
@@ -98,18 +98,18 @@ def upload_file():
 
         store_document(file.filename, file_content)
 
-        # Check plagiarism for the uploaded document
+        # This will check plagiarism for the uploaded document
         similarity_percentage, comparison_text = check_plagiarism(file_content)
 
-        # Return plagiarism results as JSON
+        # This will return plagiarism results in the form of  JSON
         return jsonify({
             'similarity_percentage': similarity_percentage,
             'comparison_text': comparison_text
         })
     return jsonify({'error': 'No file uploaded'}), 400
 
-# Initialize the database on start
-init_db()
+
+initializing_database()
 
 if __name__ == '__main__':
     app.run(debug=True)
